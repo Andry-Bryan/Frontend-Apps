@@ -1,0 +1,290 @@
+<!DOCTYPE html>
+<html lang='en'>
+<head>
+	<title>Notes App | By Andry Bryan</title>
+	<meta charset='UTF-8'>
+	<meta name='viewport' content='width=device-width, initial-scale=1.0'>
+
+	<link rel='stylesheet' href='https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.2.0/css/all.min.css'>
+
+	<style>
+		:root {
+			--note-bg: white;
+			--main-bg: rgb(240, 240, 240);
+
+			--txt-clr: rgb(40, 40, 40);
+			--date-clr: rgb(150, 150, 150);
+
+			--button-bg-default: rgb(230, 230, 230);
+			--button-bg-hover: rgb(210, 210, 210);
+			--button-outline: rgb(150, 150, 150);
+
+			--shadow-clr: rgba(0, 0, 0, 0.2);
+		}
+
+		body {
+			margin: 0;
+			font-family: Segoe UI, Arial, sans-serif;
+			background: var(--main-bg);
+			color: var(--txt-clr);
+		}
+
+		header {
+			display: flex;
+			align-items: center;
+			justify-content: space-between;
+			background: var(--note-bg);
+			box-shadow: 0px 1px 2px var(--shadow-clr);
+			padding-right: 2rem;
+			position: relative;
+		}
+
+		header > button {
+			width: 9rem;
+		}
+
+		h1 {
+			margin: 1rem;
+		}
+
+		main {
+			display: flex;
+			flex-wrap: wrap;
+			gap: 1rem;
+			padding: 1rem;
+		}
+
+		button {
+			width: max-content;
+			background: var(--button-bg-default);
+			border: 0;
+			cursor: pointer;
+			border-radius: 10rem;
+			font-family: Segoe UI, Arial, sans-serif;
+			font-size: 1rem;
+			color: var(--txt-clr);
+		}
+
+		button:hover {
+			outline: 1px solid var(--button-outline);
+		}
+
+		button:active {
+			outline: 1px solid var(--button-outline);
+			background: var(--button-bg-hover);
+		}
+
+		button > * {
+			margin: 0.5rem;
+		}
+
+		textarea {
+			font-family: Segoe UI, Arial, sans-serif;
+			border-radius: 0.5rem 0.5rem 0rem 0.5rem;
+			border: 1px solid var(--button-bg-hover);
+			padding: 0.5rem;
+			color: var(--txt-clr);
+		}
+
+		p {
+			white-space: pre-line;
+		}
+
+		.note-body {
+			display: flex;
+			flex-direction: column;
+			width: max-content;
+			background: var(--note-bg);
+			border-radius: 0.5rem;
+			box-shadow: 0px 2px 12px var(--shadow-clr);
+			position: relative;
+		}
+
+		.note-body > * {
+			margin: 1rem;
+		}
+
+		.note-body button {
+			opacity: 0;
+			transition: opacity 0.2s;
+			transition-timing-function: linear;
+		}
+
+		.note-body:hover button {
+			opacity: 1;
+		}
+
+		.note-header {
+			position: absolute;
+			right: 0;
+			display: flex;
+			gap: 0.5rem;
+			margin: 0.5rem;
+		}
+
+		.date {
+			align-self: flex-end;
+			color: var(--date-clr);
+		}
+
+		.backscreen {
+			position: fixed;
+			top: 0;
+			left: 0;
+			display: flex;
+			align-items: center;
+			justify-content: center;
+			width: 100vw;
+			height: 100vh;
+			background: rgba(0, 0, 0, 0.65);
+			backdrop-filter: blur(0.1rem);
+		}
+
+		.edit-title {
+			height: 1.5rem;
+			font-weight: bold;
+		}
+
+		.edit-note {
+			position: relative;
+			display: flex;
+			flex-direction: column;
+			background: var(--note-bg);
+			gap: 1rem;
+			padding: 1.25rem;
+			border-radius: 0.5rem;
+		}
+
+		.edit-footer {
+			display: flex;
+			gap: 0.5rem;
+		}
+
+		.edit-btn {
+			width: 50%;
+		}
+
+	</style>
+
+	<script> 'use strict';
+
+		function create_element(node_string) {
+			return (new Range()).createContextualFragment(node_string);
+		}
+
+		function note_edit(id) {
+			let title = '', content = '', backscreen;
+
+			if(id != 0) {
+				let note_stored = JSON.parse(localStorage.getItem(id));
+				title = note_stored.title;
+				content = note_stored.content;
+			}
+
+			backscreen = create_element(`
+				<div id='backscreen' class='backscreen' onclick='note_close(event);'>
+					<div class='edit-note'>
+						<textarea id='note-title' class='edit-title' placeholder='Title' rows='1'>${title}</textarea>
+						<textarea id='note-content' placeholder='Content' rows='10'>${content}</textarea>
+						<div class='edit-footer'>
+							<button class='edit-btn' onclick='note_save(${id}); note_close();'>
+								<i class="fa-solid fa-floppy-disk"></i>
+								<span>Save</span>
+							</button>
+							<button id='btn-close' class='edit-btn'>
+								<i class="fa-solid fa-xmark"></i>
+								<span>Cancel</span>
+							</button>
+						</div>
+					</div>
+				</div>
+			`);
+
+			document.body.appendChild(backscreen);
+		}
+
+		function note_close(e) {
+			if(!e || e.target.id == 'backscreen' || e.target.id == 'btn-close' || e.target.parentNode.id == 'btn-close') {
+				document.getElementById('backscreen').remove();
+			}
+		}
+
+		function note_save(old_id) {
+			let
+			note = {},
+			new_id = Date.now();
+
+			note.title = document.getElementById('note-title').value;
+			note.content = document.getElementById('note-content').value;
+
+			if(note.title != '' || note.content != '') {
+				localStorage.setItem(new_id, JSON.stringify(note));
+				note_read(new_id);
+			}
+
+			if(old_id != 0) { note_delete(old_id); }
+		}
+
+		function note_read(id) {
+			if(id != 0) {
+				note_show(id);
+			}
+			else {
+				let sorted = Object.keys(localStorage).sort((a, b) => a - b);
+				sorted.forEach(key => note_show(key));
+			}
+		}
+
+		function note_show(id) {
+			let
+			main = document.getElementById('main'),
+			stored = JSON.parse(localStorage.getItem(id)),
+			date = new Date(parseInt(id)).toLocaleString('en-gb', {dateStyle:'full', timeStyle:'medium'}),
+			note = create_element(`
+				<div id='${id}' class='note-body'>
+					<p><b>${stored.title}</b></p>
+					<p>${stored.content}</p>
+					<p class='date'>${date}</p>
+					<div class='note-header'>
+						<button onclick='note_edit("${id}");'>
+							<i class="fa-solid fa-pencil"></i>
+							<span>Edit</span>
+						</button>
+						<button onclick='note_delete("${id}");'>
+							<i class="fa-solid fa-trash"></i>
+							<span>Delete</span>
+						</button>
+					</div>
+				</div>
+			`);
+
+			main.insertBefore(note, main.firstChild);
+		}
+
+		function note_delete(id) {
+			localStorage.removeItem(id);
+			document.getElementById(id).remove();
+		}
+
+		function note_clear() {
+			localStorage.clear();
+			window.location.reload();
+		}
+	</script>
+</head>
+
+<body onload='note_read(0);'>
+	<header>
+		<h1>Notes</h1>
+		<button onclick='note_edit(0);'>
+			<i class="fa-solid fa-plus"></i>
+			<span><b>Add Note</b></span>
+		</button>
+		<button onclick='note_clear();'>
+			<i class="fa-solid fa-trash"></i>
+			<span><b>Delete All</b></span>
+		</button>
+	</header>
+	<main id='main'></main>
+</body>
+</html>
